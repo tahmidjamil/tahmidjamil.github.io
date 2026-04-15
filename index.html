@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Syed Tahmid Jamil — Industrial Engineering</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #1a3a5c;
+    --navy-light: #2a5080;
+    --blue: #3a7bd5;
+    --blue-light: #e8f0fb;
+    --blue-mid: #c5d9f5;
+    --text: #1c1c1e;
+    --text-muted: #5a6475;
+    --text-light: #8a94a6;
+    --bg: #ffffff;
+    --bg-alt: #f7f9fc;
+    --border: #e2e8f0;
+    --border-dark: #cbd5e1;
+    --accent: #d4a017;
+    --tag-bg: #e8f0fb;
+    --tag-text: #1a3a5c;
+    --sidebar-w: 260px;
+    --font-body: 'Inter', sans-serif;
+    --font-serif: 'Lora', Georgia, serif;
+    --radius: 8px;
+    --shadow: 0 1px 4px rgba(0,0,0,0.07);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.10);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-body);
+    font-size: 15px;
+    color: var(--text);
+    background: var(--bg-alt);
+    line-height: 1.7;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar ─────────────────────────────── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--navy);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2.5rem 1.5rem 2rem;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    overflow-y: auto;
+    z-index: 100;
+  }
+
+  .sidebar-avatar {
+    width: 90px; height: 90px;
+    border-radius: 50%;
+    background: var(--blue-light);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-serif);
+    font-size: 28px;
+    color: var(--navy);
+    font-weight: 500;
+    margin-bottom: 1rem;
+    border: 3px solid rgba(255,255,255,0.2);
+    flex-shrink: 0;
+  }
+
+  .sidebar-name {
+    font-family: var(--font-serif);
+    font-size: 1.05rem;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1.4;
+    margin-bottom: 0.3rem;
+  }
+
+  .sidebar-title {
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.65);
+    text-align: center;
+    line-height: 1.5;
+    margin-bottom: 0.25rem;
+  }
+
+  .sidebar-inst {
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.55);
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  nav { width: 100%; }
+
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: rgba(255,255,255,0.75);
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 400;
+    padding: 0.6rem 0.9rem;
+    border-radius: var(--radius);
+    margin-bottom: 2px;
+    transition: background 0.15s, color 0.15s;
+    letter-spacing: 0.01em;
+  }
+
+  nav a:hover, nav a.active {
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+  }
+
+  nav a .nav-icon {
+    width: 16px; height: 16px;
+    opacity: 0.7;
+    flex-shrink: 0;
+  }
+
+  .sidebar-bottom {
+    margin-top: auto;
+    padding-top: 1.5rem;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .sidebar-link {
+    color: rgba(255,255,255,0.55);
+    font-size: 0.72rem;
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+
+  .sidebar-link:hover { color: #fff; }
+
+  /* ── Mobile top bar ───────────────────────── */
+  #topbar {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: var(--navy);
+    color: #fff;
+    padding: 0 1rem;
+    height: 52px;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 200;
+    box-shadow: var(--shadow-md);
+  }
+
+  #topbar .tb-name {
+    font-family: var(--font-serif);
+    font-size: 0.95rem;
+  }
+
+  #menu-btn {
+    background: none; border: none;
+    color: #fff; cursor: pointer;
+    font-size: 1.3rem; padding: 4px;
+  }
+
+  /* ── Main content ─────────────────────────── */
+  #main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    min-height: 100vh;
+  }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .content-wrap {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 3rem 2.5rem;
+  }
+
+  /* ── Section headers ──────────────────────── */
+  .page-header {
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1.5px solid var(--border);
+  }
+
+  .page-header h1 {
+    font-family: var(--font-serif);
+    font-size: 1.7rem;
+    font-weight: 500;
+    color: var(--navy);
+    margin-bottom: 0.25rem;
+  }
+
+  .page-header p {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+  }
+
+  /* ── Cards ────────────────────────────────── */
+  .card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.4rem 1.6rem;
+    margin-bottom: 1.1rem;
+    box-shadow: var(--shadow);
+  }
+
+  /* ── HOME ─────────────────────────────────── */
+  .home-hero {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    border-radius: 12px;
+    padding: 2.2rem 2.4rem;
+    color: #fff;
+    margin-bottom: 2rem;
+  }
+
+  .home-hero h2 {
+    font-family: var(--font-serif);
+    font-size: 1.55rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  .home-hero .hero-tagline {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 1.1rem;
+  }
+
+  .home-hero p {
+    font-size: 0.92rem;
+    color: rgba(255,255,255,0.88);
+    line-height: 1.75;
+  }
+
+  .home-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .home-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.4rem;
+    box-shadow: var(--shadow);
+  }
+
+  .home-card h3 {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--blue);
+    margin-bottom: 0.7rem;
+    font-weight: 600;
+  }
+
+  .home-card ul {
+    padding-left: 1.1rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .home-card ul li { margin-bottom: 0.3rem; }
+
+  .interest-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 0.5rem;
+  }
+
+  .tag {
+    background: var(--tag-bg);
+    color: var(--tag-text);
+    border: 1px solid var(--blue-mid);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    padding: 3px 11px;
+    font-weight: 500;
+  }
+
+  .news-item {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .news-item:last-child { border-bottom: none; }
+
+  .news-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--blue);
+    margin-top: 7px;
+    flex-shrink: 0;
+  }
+
+  .news-item p { font-size: 0.87rem; color: var(--text); }
+  .news-item .news-date { font-size: 0.75rem; color: var(--text-light); margin-top: 2px; }
+
+  /* ── RESEARCH ─────────────────────────────── */
+  .pub-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--blue);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 1.1rem 1.4rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--shadow);
+  }
+
+  .pub-card.under-review { border-left-color: var(--accent); }
+  .pub-card.project { border-left-color: #5a8f3c; }
+
+  .pub-title {
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: var(--navy);
+    line-height: 1.45;
+    margin-bottom: 0.35rem;
+  }
+
+  .pub-meta {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-bottom: 0.45rem;
+  }
+
+  .pub-badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 2px 9px;
+    border-radius: 20px;
+    margin-bottom: 0.5rem;
+  }
+
+  .badge-published { background: #dff0d8; color: #2d6a1f; }
+  .badge-review { background: #fff3cd; color: #7c5a00; }
+  .badge-project { background: #e8f5e9; color: #2e7d32; }
+
+  .section-title {
+    font-family: var(--font-serif);
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: var(--navy);
+    margin: 1.8rem 0 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── TEACHING ─────────────────────────────── */
+  .course-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--shadow);
+    display: flex;
+    gap: 1.2rem;
+  }
+
+  .course-code {
+    background: var(--blue-light);
+    color: var(--navy);
+    border-radius: var(--radius);
+    padding: 0.5rem 0.8rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    align-self: flex-start;
+    min-width: 80px;
+    text-align: center;
+  }
+
+  .course-info h3 {
+    font-size: 0.93rem;
+    font-weight: 500;
+    color: var(--navy);
+    margin-bottom: 0.3rem;
+  }
+
+  .course-info p {
+    font-size: 0.83rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  /* ── CV ───────────────────────────────────── */
+  .cv-section { margin-bottom: 2rem; }
+
+  .cv-section h3 {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--blue);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .cv-item {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.1rem;
+    align-items: flex-start;
+  }
+
+  .cv-year {
+    font-size: 0.77rem;
+    color: var(--text-light);
+    min-width: 80px;
+    padding-top: 2px;
+  }
+
+  .cv-detail h4 {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 0.15rem;
+  }
+
+  .cv-detail p {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+
+  .cv-skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+  }
+
+  .skill-pill {
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    text-align: center;
+    color: var(--text);
+  }
+
+  .download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--navy);
+    color: #fff;
+    text-decoration: none;
+    padding: 0.65rem 1.4rem;
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: background 0.15s;
+    margin-bottom: 1.5rem;
+  }
+
+  .download-btn:hover { background: var(--navy-light); }
+
+  /* ── TRAVEL ───────────────────────────────── */
+  #map { width: 100%; height: 480px; border-radius: var(--radius); border: 1px solid var(--border); }
+
+  .travel-controls {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.4rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--shadow);
+  }
+
+  .travel-controls h3 {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 0.8rem;
+  }
+
+  .travel-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: flex-end;
+  }
+
+  .travel-form input, .travel-form select {
+    border: 1px solid var(--border-dark);
+    border-radius: 6px;
+    padding: 7px 11px;
+    font-size: 0.83rem;
+    font-family: var(--font-body);
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .travel-form input:focus, .travel-form select:focus {
+    border-color: var(--blue);
+  }
+
+  .travel-form input[type=text] { flex: 1; min-width: 160px; }
+
+  .btn-primary {
+    background: var(--blue);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 18px;
+    font-size: 0.83rem;
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-weight: 500;
+    transition: background 0.15s;
+  }
+
+  .btn-primary:hover { background: var(--navy); }
+
+  .btn-danger {
+    background: #c62828;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    font-family: var(--font-body);
+    margin-top: 4px;
+  }
+
+  .places-list {
+    margin-top: 1rem;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+
+  .place-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.82rem;
+  }
+
+  .place-item:last-child { border-bottom: none; }
+
+  .place-type-visited { color: var(--blue); font-weight: 500; }
+  .place-type-wishlist { color: var(--accent); font-weight: 500; }
+
+  .travel-stats {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .travel-stat {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.9rem 1.2rem;
+    text-align: center;
+    flex: 1;
+    min-width: 100px;
+    box-shadow: var(--shadow);
+  }
+
+  .travel-stat .stat-num {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--navy);
+    font-family: var(--font-serif);
+  }
+
+  .travel-stat .stat-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* ── CONTACT ──────────────────────────────── */
+  .contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .contact-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.3rem;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    box-shadow: var(--shadow);
+  }
+
+  .contact-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: var(--blue-light);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .contact-icon svg { width: 18px; height: 18px; }
+
+  .contact-item h4 {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 0.2rem;
+    font-weight: 600;
+  }
+
+  .contact-item a, .contact-item p {
+    font-size: 0.87rem;
+    color: var(--text);
+    text-decoration: none;
+    word-break: break-all;
+  }
+
+  .contact-item a:hover { color: var(--blue); }
+
+  /* ── Responsive ───────────────────────────── */
+  @media (max-width: 768px) {
+    #sidebar {
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
+      z-index: 300;
+    }
+    #sidebar.open { transform: translateX(0); }
+    #topbar { display: flex; }
+    #main { margin-left: 0; padding-top: 52px; }
+    .content-wrap { padding: 1.5rem 1.1rem; }
+    .home-grid { grid-template-columns: 1fr; }
+    .contact-grid { grid-template-columns: 1fr; }
+    #map { height: 320px; }
+    .overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 250;
+    }
+    .overlay.show { display: block; }
+  }
+
+  /* ── Utility ─────────────────────────────── */
+  .edu-item {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+  }
+
+  .edu-item:last-child { border-bottom: none; }
+
+  .edu-degree {
+    font-size: 0.91rem;
+    font-weight: 500;
+    color: var(--navy);
+    margin-bottom: 0.2rem;
+  }
+
+  .edu-school { font-size: 0.85rem; color: var(--text-muted); }
+  .edu-year { font-size: 0.77rem; color: var(--text-light); }
+  .edu-cgpa { font-size: 0.78rem; color: var(--blue); font-weight: 500; margin-top: 3px; }
+
+  .edu-icon {
+    width: 38px; height: 38px;
+    border-radius: 8px;
+    background: var(--blue-light);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 18px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Mobile overlay -->
+<div class="overlay" id="overlay" onclick="closeMenu()"></div>
+
+<!-- Top bar (mobile) -->
+<div id="topbar">
+  <span class="tb-name">Syed Tahmid Jamil</span>
+  <button id="menu-btn" onclick="toggleMenu()" aria-label="Open menu">&#9776;</button>
+</div>
+
+<!-- Sidebar -->
+<aside id="sidebar">
+  <div class="sidebar-avatar">STJ</div>
+  <div class="sidebar-name">Syed Tahmid Jamil</div>
+  <div class="sidebar-title">Lecturer, Industrial Engineering</div>
+  <div class="sidebar-inst">BGMEA University of Fashion &amp; Technology</div>
+
+  <nav>
+    <a href="#" class="nav-link active" data-page="home">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Home
+    </a>
+    <a href="#" class="nav-link" data-page="research">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Research
+    </a>
+    <a href="#" class="nav-link" data-page="teaching">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+      Teaching
+    </a>
+    <a href="#" class="nav-link" data-page="cv">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      CV
+    </a>
+    <a href="#" class="nav-link" data-page="travel">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+      Travel
+    </a>
+    <a href="#" class="nav-link" data-page="contact">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      Contact
+    </a>
+  </nav>
+
+  <div class="sidebar-bottom">
+    <a href="mailto:jamiltahmid@gmail.com" class="sidebar-link">Email</a>
+    <a href="https://buft.edu.bd/profile/STJ" target="_blank" class="sidebar-link">BUFT Profile</a>
+  </div>
+</aside>
+
+<!-- Main -->
+<main id="main">
+
+  <!-- HOME -->
+  <div class="page active" id="page-home">
+    <div class="content-wrap">
+      <div class="home-hero">
+        <h2>Syed Tahmid Jamil</h2>
+        <div class="hero-tagline">Lecturer &amp; Researcher · Industrial Engineering · Dhaka, Bangladesh</div>
+        <p>
+          I am a Lecturer in the Department of Industrial Engineering at BGMEA University of Fashion and Technology (BUFT), Dhaka. My research sits at the intersection of ergonomics, data science, and quality engineering — with a focus on real-world problems in Bangladesh's manufacturing sector, particularly the ready-made garment (RMG) industry.
+          <br><br>
+          I am currently completing an MSc in Applied Statistics and Data Science at Jahangirnagar University, where I apply time-series forecasting and Bayesian modelling methods to industrial and supply-chain challenges. I am passionate about improving worker safety and operational efficiency through evidence-based engineering.
+        </p>
+      </div>
+
+      <div class="home-grid">
+        <div class="home-card">
+          <h3>Research Interests</h3>
+          <div class="interest-tags">
+            <span class="tag">Ergonomics</span>
+            <span class="tag">Human Factors</span>
+            <span class="tag">WMSD</span>
+            <span class="tag">Time Series</span>
+            <span class="tag">Machine Learning</span>
+            <span class="tag">Bayesian Methods</span>
+            <span class="tag">Quality Engineering</span>
+            <span class="tag">Monte Carlo</span>
+            <span class="tag">QFD</span>
+          </div>
+        </div>
+        <div class="home-card">
+          <h3>Education</h3>
+          <ul>
+            <li>MSc Applied Statistics &amp; Data Science — Jahangirnagar University (2023–2025)</li>
+            <li>BSc Industrial &amp; Production Engineering — MIST (2018–2022)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--blue);font-weight:600;margin-bottom:0.9rem;">Recent Activity</h3>
+        <div class="news-item">
+          <div class="news-dot"></div>
+          <div>
+            <p>Presented at IEOM Bangladesh 2025 — Two conference papers on time-series forecasting and IoT-based monitoring.</p>
+            <div class="news-date">2025</div>
+          </div>
+        </div>
+        <div class="news-item">
+          <div class="news-dot"></div>
+          <div>
+            <p>Paper under review: "A Bayesian Framework for Root Cause Analysis of Sewing Defects in Garment Manufacturing."</p>
+            <div class="news-date">2024–2025</div>
+          </div>
+        </div>
+        <div class="news-item">
+          <div class="news-dot"></div>
+          <div>
+            <p>Paper under review: "Stochastic Modeling of Shoe Upper Defects using Monte Carlo Simulation."</p>
+            <div class="news-date">2024–2025</div>
+          </div>
+        </div>
+        <div class="news-item">
+          <div class="news-dot"></div>
+          <div>
+            <p>Teaching IE 4203 Simulation and IE 3203 Material Handling &amp; Maintenance Management at BUFT.</p>
+            <div class="news-date">Ongoing</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESEARCH -->
+  <div class="page" id="page-research">
+    <div class="content-wrap">
+      <div class="page-header">
+        <h1>Research</h1>
+        <p>Publications, ongoing work, and research interests.</p>
+      </div>
+
+      <div class="section-title">Research Interests</div>
+      <div class="card">
+        <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:1rem;">My research spans three interconnected areas of Industrial Engineering:</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+          <div style="background:var(--bg-alt);border-radius:8px;padding:1rem;">
+            <div style="font-size:0.78rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Ergonomics &amp; Human Factors</div>
+            <div class="interest-tags">
+              <span class="tag">WMSD</span><span class="tag">REBA</span><span class="tag">Workplace Safety</span><span class="tag">Ergonomic Design</span>
+            </div>
+          </div>
+          <div style="background:var(--bg-alt);border-radius:8px;padding:1rem;">
+            <div style="font-size:0.78rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Data Science &amp; ML in IE</div>
+            <div class="interest-tags">
+              <span class="tag">SARIMA</span><span class="tag">STL-ARIMA</span><span class="tag">STL-ETS</span><span class="tag">Time Series</span><span class="tag">Predictive Analytics</span>
+            </div>
+          </div>
+          <div style="background:var(--bg-alt);border-radius:8px;padding:1rem;">
+            <div style="font-size:0.78rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;">Quality &amp; Operations</div>
+            <div class="interest-tags">
+              <span class="tag">Bayesian Methods</span><span class="tag">QFD</span><span class="tag">Monte Carlo</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">Conference Papers</div>
+      <div class="pub-card">
+        <span class="pub-badge badge-published">Published · IEOM 2025</span>
+        <div class="pub-title">Forecasting Onion Prices in Indian Cities: A Comparative Analysis of Time Series Models</div>
+        <div class="pub-meta">Syed Tahmid Jamil et al. · IEOM Bangladesh 2025 · Conference Paper</div>
+        <div class="interest-tags">
+          <span class="tag">Time Series</span><span class="tag">SARIMA</span><span class="tag">STL-ARIMA</span><span class="tag">Forecasting</span>
+        </div>
+      </div>
+
+      <div class="pub-card">
+        <span class="pub-badge badge-published">Published · IEOM 2025</span>
+        <div class="pub-title">IoT-Based Temperature and Humidity Monitoring System for Industrial Applications</div>
+        <div class="pub-meta">Syed Tahmid Jamil et al. · IEOM Bangladesh 2025 · Conference Paper</div>
+        <div class="interest-tags">
+          <span class="tag">IoT</span><span class="tag">Sensors</span><span class="tag">Monitoring Systems</span>
+        </div>
+      </div>
+
+      <div class="section-title">Papers Under Review</div>
+      <div class="pub-card under-review">
+        <span class="pub-badge badge-review">Under Review</span>
+        <div class="pub-title">A Bayesian Framework for Root Cause Analysis of Sewing Defects in Garment Manufacturing</div>
+        <div class="pub-meta">Syed Tahmid Jamil et al. · Submitted to peer-reviewed journal</div>
+        <div class="interest-tags">
+          <span class="tag">Bayesian Methods</span><span class="tag">Quality Control</span><span class="tag">RMG Industry</span><span class="tag">Root Cause Analysis</span>
+        </div>
+      </div>
+
+      <div class="pub-card under-review">
+        <span class="pub-badge badge-review">Under Review</span>
+        <div class="pub-title">Stochastic Modeling of Shoe Upper Defects using Monte Carlo Simulation</div>
+        <div class="pub-meta">Syed Tahmid Jamil et al. · Submitted to peer-reviewed journal</div>
+        <div class="interest-tags">
+          <span class="tag">Monte Carlo</span><span class="tag">Stochastic Modeling</span><span class="tag">Defect Analysis</span><span class="tag">Footwear Manufacturing</span>
+        </div>
+      </div>
+
+      <div class="section-title">Research Projects</div>
+      <div class="pub-card project">
+        <span class="pub-badge badge-project">Design Project</span>
+        <div class="pub-title">Ergonomic Split Keyboard Design using Quality Function Deployment (QFD) and SolidWorks</div>
+        <div class="pub-meta">Applied QFD methodology to translate user needs into engineering specifications; 3D modelling in SolidWorks.</div>
+        <div class="interest-tags">
+          <span class="tag">QFD</span><span class="tag">SolidWorks</span><span class="tag">Ergonomic Design</span><span class="tag">Product Development</span>
+        </div>
+      </div>
+
+      <div class="pub-card project">
+        <span class="pub-badge badge-project">Applied Research</span>
+        <div class="pub-title">Ergonomic Intervention in the Ready-Made Garment (RMG) Industry using REBA</div>
+        <div class="pub-meta">Workplace assessment and intervention design to reduce musculoskeletal disorders among sewing operators.</div>
+        <div class="interest-tags">
+          <span class="tag">REBA</span><span class="tag">WMSD</span><span class="tag">RMG Industry</span><span class="tag">Workplace Safety</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEACHING -->
+  <div class="page" id="page-teaching">
+    <div class="content-wrap">
+      <div class="page-header">
+        <h1>Teaching</h1>
+        <p>Courses taught at BGMEA University of Fashion and Technology (BUFT), Dhaka.</p>
+      </div>
+
+      <div class="card" style="margin-bottom:1.5rem;">
+        <p style="font-size:0.88rem;color:var(--text-muted);">
+          As a Lecturer in the Department of Industrial Engineering at BUFT, I am committed to connecting theoretical foundations with hands-on, industry-relevant applications. My teaching philosophy emphasises problem-solving, quantitative rigour, and real-world case studies drawn from Bangladesh's manufacturing sector.
+        </p>
+      </div>
+
+      <div class="section-title">Current Courses</div>
+
+      <div class="course-card">
+        <div class="course-code">IE 4203</div>
+        <div class="course-info">
+          <h3>Simulation</h3>
+          <p>
+            An upper-division course covering discrete-event simulation methodologies and their application in industrial systems. Topics include Monte Carlo simulation, random number generation, probability distributions, model validation, and simulation software. Students work on hands-on projects modelling real manufacturing and service systems to analyse performance and support decision-making.
+          </p>
+          <div class="interest-tags" style="margin-top:0.6rem;">
+            <span class="tag">Monte Carlo</span><span class="tag">Discrete-Event Simulation</span><span class="tag">Statistical Modelling</span><span class="tag">Python / Arena</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="course-card">
+        <div class="course-code">IE 3203</div>
+        <div class="course-info">
+          <h3>Material Handling and Maintenance Management</h3>
+          <p>
+            A core course addressing the principles of material flow, storage systems, and equipment selection in manufacturing and logistics environments. The maintenance management component covers preventive, predictive, and corrective maintenance strategies, reliability analysis, and total productive maintenance (TPM). Emphasis is placed on applications relevant to Bangladesh's RMG and textile industries.
+          </p>
+          <div class="interest-tags" style="margin-top:0.6rem;">
+            <span class="tag">Material Flow</span><span class="tag">TPM</span><span class="tag">Reliability</span><span class="tag">Logistics</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">Teaching Philosophy</div>
+      <div class="card">
+        <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:0.8rem;">
+          I believe effective engineering education requires bridging the gap between mathematical abstraction and real industrial problems. In my courses I:
+        </p>
+        <ul style="padding-left:1.2rem;font-size:0.87rem;color:var(--text-muted);">
+          <li style="margin-bottom:0.5rem;">Use local industry case studies (RMG, footwear, food supply chains) to contextualise theory.</li>
+          <li style="margin-bottom:0.5rem;">Integrate programming tools (Python, R, simulation software) from the first week.</li>
+          <li style="margin-bottom:0.5rem;">Encourage students to question assumptions and interpret results critically.</li>
+          <li>Maintain an open-door policy for consultation and research mentorship.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- CV -->
+  <div class="page" id="page-cv">
+    <div class="content-wrap">
+      <div class="page-header">
+        <h1>Curriculum Vitae</h1>
+        <p>Academic and professional background.</p>
+      </div>
+
+      <a href="mailto:jamiltahmid@gmail.com?subject=CV Request" class="download-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Request Full CV via Email
+      </a>
+
+      <div class="cv-section">
+        <h3>Education</h3>
+        <div class="edu-item">
+          <div class="edu-icon">🎓</div>
+          <div>
+            <div class="edu-degree">MSc in Applied Statistics and Data Science</div>
+            <div class="edu-school">Jahangirnagar University, Bangladesh</div>
+            <div class="edu-year">2023 – 2025</div>
+            <div class="edu-cgpa">CGPA 3.77 / 4.00</div>
+          </div>
+        </div>
+        <div class="edu-item">
+          <div class="edu-icon">🎓</div>
+          <div>
+            <div class="edu-degree">BSc in Industrial and Production Engineering</div>
+            <div class="edu-school">Military Institute of Science and Technology (MIST), Bangladesh</div>
+            <div class="edu-year">2018 – 2022</div>
+            <div class="edu-cgpa">CGPA 3.52 / 4.00</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cv-section">
+        <h3>Academic Positions</h3>
+        <div class="cv-item">
+          <div class="cv-year">2022–Present</div>
+          <div class="cv-detail">
+            <h4>Lecturer, Department of Industrial Engineering</h4>
+            <p>BGMEA University of Fashion and Technology (BUFT), Dhaka, Bangladesh</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="cv-section">
+        <h3>Publications</h3>
+        <div class="cv-item">
+          <div class="cv-year">2025</div>
+          <div class="cv-detail">
+            <h4>Forecasting Onion Prices in Indian Cities: A Comparative Analysis of Time Series Models</h4>
+            <p>IEOM Bangladesh 2025 · Conference Paper</p>
+          </div>
+        </div>
+        <div class="cv-item">
+          <div class="cv-year">2025</div>
+          <div class="cv-detail">
+            <h4>IoT-Based Temperature and Humidity Monitoring System</h4>
+            <p>IEOM Bangladesh 2025 · Conference Paper</p>
+          </div>
+        </div>
+        <div class="cv-item">
+          <div class="cv-year">Under Review</div>
+          <div class="cv-detail">
+            <h4>A Bayesian Framework for Root Cause Analysis of Sewing Defects in Garment Manufacturing</h4>
+            <p>Submitted to peer-reviewed journal</p>
+          </div>
+        </div>
+        <div class="cv-item">
+          <div class="cv-year">Under Review</div>
+          <div class="cv-detail">
+            <h4>Stochastic Modeling of Shoe Upper Defects using Monte Carlo Simulation</h4>
+            <p>Submitted to peer-reviewed journal</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="cv-section">
+        <h3>Honours &amp; Awards</h3>
+        <div class="cv-item">
+          <div class="cv-year">2020</div>
+          <div class="cv-detail">
+            <h4>Dean's List Scholarship</h4>
+            <p>Military Institute of Science and Technology (MIST)</p>
+          </div>
+        </div>
+        <div class="cv-item">
+          <div class="cv-year">2019</div>
+          <div class="cv-detail">
+            <h4>Hult Prize — Mumbai Regional Finalist</h4>
+            <p>Global student entrepreneurship competition organised by the Hult Prize Foundation</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="cv-section">
+        <h3>Skills &amp; Tools</h3>
+        <div class="cv-skills-grid">
+          <div class="skill-pill">Python</div>
+          <div class="skill-pill">R</div>
+          <div class="skill-pill">SPSS</div>
+          <div class="skill-pill">Minitab</div>
+          <div class="skill-pill">Tableau</div>
+          <div class="skill-pill">SolidWorks</div>
+          <div class="skill-pill">LaTeX</div>
+          <div class="skill-pill">SARIMA</div>
+          <div class="skill-pill">QFD</div>
+          <div class="skill-pill">REBA</div>
+          <div class="skill-pill">Monte Carlo</div>
+          <div class="skill-pill">MS Office</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRAVEL -->
+  <div class="page" id="page-travel">
+    <div class="content-wrap">
+      <div class="page-header">
+        <h1>Travel</h1>
+        <p>Click the map or use the form below to mark places you have visited or want to visit.</p>
+      </div>
+
+      <div class="travel-stats">
+        <div class="travel-stat">
+          <div class="stat-num" id="visited-count">0</div>
+          <div class="stat-label">Places Visited</div>
+        </div>
+        <div class="travel-stat">
+          <div class="stat-num" id="wishlist-count">0</div>
+          <div class="stat-label">Wishlist</div>
+        </div>
+        <div class="travel-stat">
+          <div class="stat-num" id="countries-count">0</div>
+          <div class="stat-label">Countries</div>
+        </div>
+      </div>
+
+      <div id="map"></div>
+
+      <div class="travel-controls" style="margin-top:1rem;">
+        <h3>Add a Place</h3>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.8rem;">You can also click directly on the map to place a pin, or use the form below to search by name.</p>
+        <div class="travel-form">
+          <input type="text" id="place-name" placeholder="Place name (e.g. Mumbai, India)">
+          <input type="number" id="place-lat" placeholder="Latitude" step="any" style="width:120px;">
+          <input type="number" id="place-lng" placeholder="Longitude" step="any" style="width:120px;">
+          <select id="place-type">
+            <option value="visited">✓ Visited</option>
+            <option value="wishlist">♡ Wishlist</option>
+          </select>
+          <button class="btn-primary" onclick="addPlace()">Add Pin</button>
+        </div>
+        <p style="font-size:0.75rem;color:var(--text-light);margin-top:0.6rem;">Tip: Use <a href="https://www.latlong.net" target="_blank" style="color:var(--blue);">latlong.net</a> to find coordinates, or just click on the map.</p>
+
+        <div class="places-list" id="places-list" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTACT -->
+  <div class="page" id="page-contact">
+    <div class="content-wrap">
+      <div class="page-header">
+        <h1>Contact</h1>
+        <p>I welcome enquiries about research collaboration, teaching, or general correspondence.</p>
+      </div>
+
+      <div class="contact-grid">
+        <div class="contact-item">
+          <div class="contact-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#1a3a5c" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+          <div>
+            <h4>Email</h4>
+            <a href="mailto:jamiltahmid@gmail.com">jamiltahmid@gmail.com</a>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#1a3a5c" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+          </div>
+          <div>
+            <h4>University Profile</h4>
+            <a href="https://buft.edu.bd/profile/STJ" target="_blank">buft.edu.bd/profile/STJ</a>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#1a3a5c" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <div>
+            <h4>Location</h4>
+            <p>Dhaka, Bangladesh</p>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#1a3a5c" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+          </div>
+          <div>
+            <h4>Affiliation</h4>
+            <p>Dept. of Industrial Engineering<br>BGMEA University of Fashion &amp; Technology (BUFT)</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size:0.78rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--blue);font-weight:600;margin-bottom:0.8rem;">Open to Collaboration</h3>
+        <p style="font-size:0.87rem;color:var(--text-muted);">
+          I am actively looking for research collaborators — particularly in ergonomics and workplace safety in the RMG sector, applied statistical modelling, and data-driven quality management. If you are working in related areas or are interested in joint projects, please do not hesitate to reach out via email.
+        </p>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+/* ── Navigation ──────────────────────────────── */
+const navLinks = document.querySelectorAll('.nav-link');
+const pages = document.querySelectorAll('.page');
+let mapInitialized = false;
+
+navLinks.forEach(link => {
+  link.addEventListener('click', function(e) {
+    e.preventDefault();
+    const target = this.dataset.page;
+    navLinks.forEach(l => l.classList.remove('active'));
+    this.classList.add('active');
+    pages.forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + target).classList.add('active');
+    closeMenu();
+    if (target === 'travel' && !mapInitialized) {
+      setTimeout(initMap, 100);
+    }
+    window.scrollTo(0, 0);
+  });
+});
+
+function toggleMenu() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+
+function closeMenu() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+/* ── Travel Map ───────────────────────────────── */
+let map, places = [];
+
+function loadPlaces() {
+  try {
+    const saved = localStorage.getItem('stj_travel_places');
+    if (saved) places = JSON.parse(saved);
+  } catch(e) { places = []; }
+}
+
+function savePlaces() {
+  try { localStorage.setItem('stj_travel_places', JSON.stringify(places)); } catch(e) {}
+}
+
+function initMap() {
+  loadPlaces();
+  map = L.map('map').setView([23.8, 90.4], 4);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 18
+  }).addTo(map);
+
+  map.on('click', function(e) {
+    const name = prompt('Name this place (or leave blank to cancel):');
+    if (name === null || name.trim() === '') return;
+    const type = confirm('Mark as Visited? (Cancel = Wishlist)') ? 'visited' : 'wishlist';
+    addPlaceData(name.trim(), e.latlng.lat, e.latlng.lng, type);
+  });
+
+  places.forEach(renderMarker);
+  updateStats();
+  mapInitialized = true;
+}
+
+function renderMarker(p) {
+  const color = p.type === 'visited' ? '#1a3a5c' : '#d4a017';
+  const icon = L.divIcon({
+    className: '',
+    html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>`,
+    iconSize: [14,14], iconAnchor: [7,7]
+  });
+  const marker = L.marker([p.lat, p.lng], {icon}).addTo(map);
+  const label = p.type === 'visited' ? '✓ Visited' : '♡ Wishlist';
+  marker.bindPopup(`<strong>${p.name}</strong><br><span style="font-size:12px;color:${color}">${label}</span>`);
+  p.marker = marker;
+}
+
+function addPlace() {
+  const name = document.getElementById('place-name').value.trim();
+  const lat = parseFloat(document.getElementById('place-lat').value);
+  const lng = parseFloat(document.getElementById('place-lng').value);
+  const type = document.getElementById('place-type').value;
+  if (!name) { alert('Please enter a place name.'); return; }
+  if (isNaN(lat) || isNaN(lng)) { alert('Please enter valid latitude and longitude coordinates.\n\nTip: use latlong.net to find coordinates.'); return; }
+  addPlaceData(name, lat, lng, type);
+  document.getElementById('place-name').value = '';
+  document.getElementById('place-lat').value = '';
+  document.getElementById('place-lng').value = '';
+}
+
+function addPlaceData(name, lat, lng, type) {
+  const p = { name, lat, lng, type, id: Date.now() };
+  places.push(p);
+  savePlaces();
+  renderMarker(p);
+  updateStats();
+  renderList();
+  map.setView([lat, lng], Math.max(map.getZoom(), 6));
+}
+
+function removePlace(id) {
+  const idx = places.findIndex(p => p.id === id);
+  if (idx === -1) return;
+  if (places[idx].marker) map.removeLayer(places[idx].marker);
+  places.splice(idx, 1);
+  savePlaces();
+  updateStats();
+  renderList();
+}
+
+function updateStats() {
+  const visited = places.filter(p => p.type === 'visited');
+  const wishlist = places.filter(p => p.type === 'wishlist');
+  document.getElementById('visited-count').textContent = visited.length;
+  document.getElementById('wishlist-count').textContent = wishlist.length;
+  document.getElementById('countries-count').textContent = '—';
+  renderList();
+}
+
+function renderList() {
+  const list = document.getElementById('places-list');
+  if (places.length === 0) { list.style.display = 'none'; return; }
+  list.style.display = 'block';
+  list.innerHTML = places.map(p => `
+    <div class="place-item">
+      <span>
+        <span class="place-type-${p.type}">${p.type === 'visited' ? '✓' : '♡'}</span>
+        &nbsp;${p.name}
+      </span>
+      <button class="btn-danger" onclick="removePlace(${p.id})">Remove</button>
+    </div>
+  `).join('');
+}
+</script>
+</body>
+</html>
